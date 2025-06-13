@@ -6,10 +6,3 @@ export class AppService {
     return 'Hello World!';
   }
 }
-
-@Injectable()
-export class TestService {
-  getTest(): string {
-    return 'Test';
-  }
-}
