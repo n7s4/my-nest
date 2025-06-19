@@ -4,11 +4,18 @@ import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
-import { VersioningType, VERSION_NEUTRAL } from '@nestjs/common';
+import {
+  VersioningType,
+  VERSION_NEUTRAL,
+  ValidationPipe,
+  VersioningType,
+  VERSION_NEUTRAL,
+} from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './common/exceptions/base.exception.filter';
 import { HttpExceptionFilter } from './common/exceptions/http.exception.filter';
 import { generateDocument } from './doc';
+import { VersioningType, VERSION_NEUTRAL } from '@nestjs/common';
 
 declare const module: any;
 
@@ -28,6 +35,9 @@ async function bootstrap() {
     defaultVersion: [VERSION_NEUTRAL, '1', '2'],
     type: VersioningType.URI,
   });
+
+  // 启用全局字段校验，保证请求接口字段校验正确
+  app.useGlobalPipes(new ValidationPipe());
 
   // 创建文档
   generateDocument(app);
