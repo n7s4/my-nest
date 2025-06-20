@@ -8,37 +8,60 @@ import { messages } from '@/helper/feishu/message';
 
 @Injectable()
 export class FeishuService {
-  private APP_TOKEN_CACHE_KEY;
+  private APP_TOKEN_CACHE_KEY: string;
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    this.APP_TOKEN_CACHE_KEY = this.configService.get('APP_TOKEN_CACHE_KEY');
-  }
-
-  async getAppToken() {
-    let appToken: string | undefined;
-    appToken = await this.cacheManager.get(this.APP_TOKEN_CACHE_KEY);
-    if (!appToken) {
-      const response = await getAppToken();
-      if (response.code === 0) {
-        // token 有效期为 2 小时，在此期间调用该接口 token 不会改变。当 token 有效期小于 30 分的时候,再次请求获取 token 的时候，会生成一个新的 token，与此同时老的 token 依然有效。
-        appToken = response.app_access_token;
-        this.cacheManager.set(
-          this.APP_TOKEN_CACHE_KEY,
-          appToken,
-          response.expire - 60,
-        );
-      } else {
-        throw new BusinessException('飞书调用异常');
-      }
+    const cacheKey = this.configService.get<string>('APP_TOKEN_CACHE_KEY');
+    if (!cacheKey) {
+      throw new Error('APP_TOKEN_CACHE_KEY not configured');
     }
-    return appToken;
+    this.APP_TOKEN_CACHE_KEY = cacheKey;
   }
 
-  async sendMessage(receive_id_type, params) {
+  async getAppToken(): Promise<string> {
+    try {
+      let appToken = await this.cacheManager.get<string>(
+        this.APP_TOKEN_CACHE_KEY,
+      );
+      console.log('从缓存获取的 token:', appToken);
+
+      if (!appToken) {
+        const response = await getAppToken();
+        if (response.code === 0) {
+          appToken = response.app_access_token;
+          console.log('获取新的 token:', appToken);
+
+          // 设置缓存
+          await this.cacheManager.set(
+            this.APP_TOKEN_CACHE_KEY,
+            appToken,
+            response.expire - 60,
+          );
+
+          // 测试缓存是否设置成功
+          const cachedToken = await this.cacheManager.get<string>(
+            this.APP_TOKEN_CACHE_KEY,
+          );
+          console.log('缓存设置后立即读取:', cachedToken);
+        } else {
+          throw new BusinessException('飞书调用异常');
+        }
+      }
+
+      if (!appToken) {
+        throw new BusinessException('获取飞书 token 失败');
+      }
+      return appToken;
+    } catch (error) {
+      console.error('获取 token 时发生错误:', error);
+      throw new BusinessException('获取飞书 token 失败');
+    }
+  }
+
+  async sendMessage(receive_id_type: string, params: Record<string, unknown>) {
     const app_token = await this.getAppToken();
-    return messages(receive_id_type, params, app_token as string);
+    return messages(receive_id_type, params, app_token);
   }
 }

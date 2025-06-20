@@ -8,14 +8,11 @@ import {
   VersioningType,
   VERSION_NEUTRAL,
   ValidationPipe,
-  VersioningType,
-  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { AllExceptionsFilter } from './common/exceptions/base.exception.filter';
 import { HttpExceptionFilter } from './common/exceptions/http.exception.filter';
 import { generateDocument } from './doc';
-import { VersioningType, VERSION_NEUTRAL } from '@nestjs/common';
 
 declare const module: any;
 
